@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UploadFileRequest;
+use App\Models\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
 class FileController extends Controller
 {
+
     public function upload(Request $request)
     {
 
         $file = $request->file('file');
+        $path = 'uploads/'.$file->getClientOriginalName();
+        Storage::disk('public')->put($path, $file);
 
-        Storage::disk('public')->put('uploads/'.$file->getClientOriginalName(), $file);
+        File::create([
+            'filename' => $file->getClientOriginalName(),
+            'path' => $path,
+        ]);
+
         return response()->json(['message' => 'Arquivo enviado com sucesso!'], 200);
-
     }
 }
