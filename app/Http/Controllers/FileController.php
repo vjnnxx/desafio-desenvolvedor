@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 class FileController extends Controller
 {
 
-    public function upload(Request $request)
+    // Salva o arquivo enviado e registra no banco de dados
+    public function upload(UploadFileRequest $request)
     {
-
         $file = $request->file('file');
         $path = 'uploads/'.$file->getClientOriginalName();
         Storage::disk('public')->put($path, $file);
@@ -23,5 +23,6 @@ class FileController extends Controller
         ]);
 
         return response()->json(['message' => 'Arquivo enviado com sucesso!'], 200);
+
     }
 }
