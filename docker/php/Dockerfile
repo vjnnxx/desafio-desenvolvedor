@@ -17,6 +17,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Instalar extensões do PHP
 RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
+COPY ./docker/php/conf/ /usr/local/etc/php/conf.d/
+
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
