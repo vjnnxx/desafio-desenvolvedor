@@ -5,10 +5,26 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class FileController extends Controller
 {
+    //Busca arquivos por nome ou data de envio
+    public function search(Request $request)
+    {
+        $name = $request->input('name');
+        $date = $request->input('date');
+
+        $result = File::select('filename', DB::raw('DATE_FORMAT(created_at,"%Y-%m-%d") as upload_date'))->whereDate('created_at', $date)->orWhere('filename', $name)->get();
+
+        if($result->isEmpty()){
+            return response()->json(['message' => 'Nenhum arquivo encontrado!'], 404);
+        }
+
+        return response()->json($result, 200);
+    }
+
     // Salva o arquivo enviado e registra no banco de dados
     public function upload(UploadFileRequest $request)
     {
