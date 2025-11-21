@@ -17,6 +17,7 @@ class ProcessChunkJob implements ShouldQueue
         $this->dataChunk = $dataChunk;
     }
 
+    // Utiliza o chunk de dados para criar entradas no banco
     public function handle(): void
     {
         try{

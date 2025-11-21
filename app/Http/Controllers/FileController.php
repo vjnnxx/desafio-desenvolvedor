@@ -31,27 +31,26 @@ class FileController extends Controller
     public function upload(UploadFileRequest $request)
     {
         $file = $request->file('file');
-        $hash = hash_file('sha256', $file->path());
+        $extension = $file->getClientOriginalExtension();
 
         //Verifica se o arquivo já foi enviado anteriormente
+        $hash = hash_file('sha256', $file->path());
         $existingFile = File::where('file_hash', $hash)->first();
         if ($existingFile) {
-            return response()->json(['message' => 'Arquivo repetido!'], 403);
+            return response()->json(['message' => 'Não é possível realizar upload, arquivo já enviado.'], 403);
         }
         $path = 'uploads/'.$file->getClientOriginalName();
         Storage::disk('public')->put($path, file_get_contents($file->path()));
 
-        //Colocar dentro de uma transaction
         try {
-
-            DB::transaction(function () use ($file, $path, $hash) {
+            DB::transaction(function () use ($file, $path, $hash, $extension) {
                 $file_model = File::create([
                     'filename' => $file->getClientOriginalName(),
                     'path' => $path,
                     'file_hash' => $hash,
                 ]);
 
-                ProcessFilesJob::dispatch(Storage::disk('public')->path($path), $file_model->id);
+                ProcessFilesJob::dispatch(Storage::disk('public')->path($path), $file_model->id, $extension);
             });
 
         } catch (\Exception $e) {
@@ -64,6 +63,7 @@ class FileController extends Controller
 
     }
 
+    //Busca conteúdo dentro de arquivos salvos
     public function searchContent(Request $request)
     {
         $tckrSymb = $request->input('TckrSymb');
@@ -74,6 +74,10 @@ class FileController extends Controller
         }
 
         $result = FileData::select('RptDt', 'TckrSymb', 'MktNm', 'SctyCtgyNm', 'ISIN', 'CrpnNm')->where('TckrSymb', $tckrSymb)->orWhere('RptDt', $rptDt)->paginate(1000);
+
+        if($result->isEmpty()){
+            return response()->json(['message' => 'Nenhum resultado encontrado!'], 404);
+        }
 
         return response()->json($result, 200);
     }
