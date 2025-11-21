@@ -7,6 +7,7 @@ use App\Models\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Jobs\ProcessFilesJob;
 
 class FileController extends Controller
 {
@@ -37,13 +38,26 @@ class FileController extends Controller
             return response()->json(['message' => 'Arquivo repetido!'], 403);
         }
         $path = 'uploads/'.$file->getClientOriginalName();
-        Storage::disk('public')->put($path, $file);
+        Storage::disk('public')->put($path, file_get_contents($file->path()));
 
-        File::create([
-            'filename' => $file->getClientOriginalName(),
-            'path' => $path,
-            'file_hash' => $hash,
-        ]);
+        //Colocar dentro de uma transaction
+        try {
+
+            DB::transaction(function () use ($file, $path, $hash) {
+                $file_model = File::create([
+                    'filename' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'file_hash' => $hash,
+                ]);
+
+                ProcessFilesJob::dispatch(Storage::disk('public')->path($path), $file_model->id);
+            });
+
+        } catch (\Exception $e) {
+            throw $e;
+            return response()->json(['message' => 'Erro ao processar o arquivo.'], 500);
+        }
+
 
         return response()->json(['message' => 'Arquivo enviado com sucesso!'], 200);
 
