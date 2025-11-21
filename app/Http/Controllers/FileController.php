@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UploadFileRequest;
 use App\Models\File;
+use App\Models\FileData;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -61,5 +62,19 @@ class FileController extends Controller
 
         return response()->json(['message' => 'Arquivo enviado com sucesso!'], 200);
 
+    }
+
+    public function searchContent(Request $request)
+    {
+        $tckrSymb = $request->input('TckrSymb');
+        $rptDt = $request->input('RptDt');
+
+        if(!$tckrSymb && !$rptDt){
+            $result = FileData::select('RptDt', 'TckrSymb', 'MktNm', 'SctyCtgyNm', 'ISIN', 'CrpnNm')->paginate(1000);
+        }
+
+        $result = FileData::select('RptDt', 'TckrSymb', 'MktNm', 'SctyCtgyNm', 'ISIN', 'CrpnNm')->where('TckrSymb', $tckrSymb)->orWhere('RptDt', $rptDt)->paginate(1000);
+
+        return response()->json($result, 200);
     }
 }

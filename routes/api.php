@@ -10,5 +10,6 @@ Route::get('/user', function (Request $request) {
 
 
 Route::get('/search', [FileController::class, 'search'])->name('file.search');
+Route::get('/search-content', [FileController::class, 'searchContent'])->name('file.search.content');
 Route::post('/upload', [FileController::class, 'upload'])->name('file.upload');
 
